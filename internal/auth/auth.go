@@ -2,51 +2,18 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/zalando/go-keyring"
-	"golang.org/x/oauth2"
 	"resty.dev/v3"
 )
 
 const (
-	keyringService = "listy"
-	keyringUser    = "trakt_oauth_token"
-
 	traktDeviceCodeURL = "https://api.trakt.tv/oauth/device/code"
 	traktTokenURL      = "https://api.trakt.tv/oauth/device/token"
 )
-
-func SaveToken(token *oauth2.Token) error {
-	data, err := json.Marshal(token)
-	if err != nil {
-		return err
-	}
-
-	return keyring.Set(keyringService, keyringUser, string(data))
-}
-
-func LoadToken() (*oauth2.Token, error) {
-	data, err := keyring.Get(keyringService, keyringUser)
-	if err != nil {
-		return nil, err
-	}
-
-	var token oauth2.Token
-	if err := json.Unmarshal([]byte(data), &token); err != nil {
-		return nil, err
-	}
-
-	return &token, nil
-}
-
-func DeleteToken() error {
-	return keyring.Delete(keyringService, keyringUser)
-}
 
 func getClientCredentials() (clientId, clientSecret string, err error) {
 	clientId = os.Getenv("TRAKT_CLIENT_ID")
@@ -65,7 +32,7 @@ type DeviceCodeResponse struct {
 	Interval        int    `json:"interval"`
 }
 
-func StartDeviceAuthFlow(ctx context.Context) (*oauth2.Token, error) {
+func StartDeviceAuthFlow(ctx context.Context) (*Token, error) {
 	clientId, clientSecret, err := getClientCredentials()
 	if err != nil {
 		return nil, err
@@ -79,12 +46,12 @@ func StartDeviceAuthFlow(ctx context.Context) (*oauth2.Token, error) {
 		SetResult(&DeviceCodeResponse{}).
 		Post(traktDeviceCodeURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to start device auth flow: %w", err)
 	}
 
 	deviceResp := resp.Result().(*DeviceCodeResponse)
 
-	fmt.Printf("Please visit %s and enter the code: %s\n", deviceResp.VerificationURL, deviceResp.UserCode)
+	fmt.Printf("Please visit: %s/%s\n", deviceResp.VerificationURL, deviceResp.UserCode)
 	fmt.Printf("Waiting for authorization...\n")
 
 	ticker := time.NewTicker(time.Duration(deviceResp.Interval) * time.Second)
@@ -95,6 +62,7 @@ func StartDeviceAuthFlow(ctx context.Context) (*oauth2.Token, error) {
 	for {
 		select {
 		case <-ticker.C:
+			var tokenResp Token
 			resp, err := http.R().
 				SetHeader("Content-Type", "application/json").
 				SetBody(map[string]string{
@@ -102,10 +70,10 @@ func StartDeviceAuthFlow(ctx context.Context) (*oauth2.Token, error) {
 					"client_secret": clientSecret,
 					"code":          deviceResp.DeviceCode,
 				}).
-				SetResult(&oauth2.Token{}).
+				SetResult(&tokenResp).
 				Post(traktTokenURL)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error during token exchange: %w", err)
 			}
 
 			if resp.IsError() {
@@ -115,27 +83,11 @@ func StartDeviceAuthFlow(ctx context.Context) (*oauth2.Token, error) {
 				return nil, fmt.Errorf("error during token exchange: %s", resp.String())
 			}
 
-			token := resp.Result().(*oauth2.Token)
-			return token, nil
+			tokenResp.CreatedAt = UnixTime(time.Now())
+			return &tokenResp, nil
 
 		case <-timeout:
 			return nil, errors.New("authorization timed out")
 		}
 	}
-}
-
-func Config() (*oauth2.Config, error) {
-	clientID, clientSecret, err := getClientCredentials()
-	if err != nil {
-		return nil, err
-	}
-	return &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		Endpoint: oauth2.Endpoint{
-			TokenURL: traktTokenURL,
-		},
-		RedirectURL: "urn:ietf:wg:oauth:2.0:oob",
-		Scopes:      []string{"public", "lists"},
-	}, nil
 }

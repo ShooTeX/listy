@@ -34,6 +34,24 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name: "test",
+				Action: func(ctx context.Context, c *cli.Command) error {
+					client, err := auth.NewClient(ctx, nil)
+					if err != nil {
+						return fmt.Errorf("failed to create client: %v", err)
+					}
+					defer client.Close()
+
+					_, err = client.R().
+						Get("/users/me/lists")
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 
