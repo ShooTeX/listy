@@ -30,12 +30,12 @@ func addIntersectionToListCmd() *cli.Command {
 			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			trakt, err := trakt.New(ctx)
+			traktApi, err := trakt.New(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to create trakt client: %w", err)
 			}
 
-			if err := trakt.AddIntersectToList(lists, destination); err != nil {
+			if err := traktApi.AddIntersectToList(lists, destination); err != nil {
 				return fmt.Errorf("failed to add intersection to list: %w", err)
 			}
 
@@ -66,12 +66,12 @@ func addDifferenceToListCmd() *cli.Command {
 			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			trakt, err := trakt.New(ctx)
+			traktApi, err := trakt.New(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to create trakt client: %w", err)
 			}
 
-			if err := trakt.AddDifferenceToList(lists, destination); err != nil {
+			if err := traktApi.AddDifferenceToList(lists, destination); err != nil {
 				return fmt.Errorf("failed to add intersection to list: %w", err)
 			}
 
@@ -101,13 +101,50 @@ func copyListOrderCmd() *cli.Command {
 			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
-			trakt, err := trakt.New(ctx)
+			traktApi, err := trakt.New(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to create trakt client: %w", err)
 			}
 
-			if err := trakt.CopyListOrder(from, destination); err != nil {
+			if err := traktApi.CopyListOrder(from, destination); err != nil {
 				return fmt.Errorf("failed to copy list order: %w", err)
+			}
+
+			return nil
+		},
+	}
+}
+
+func cleanCmd() *cli.Command {
+	var list string
+	var watched bool
+	return &cli.Command{
+		Name:  "clean",
+		Usage: "clean up a list",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:        "watched",
+				Destination: &watched,
+				Aliases:     []string{"w"},
+			},
+		},
+		Arguments: []cli.Argument{
+			&cli.StringArg{
+				Name:        "list",
+				Destination: &list,
+				Value:       "testing",
+			},
+		},
+		Action: func(ctx context.Context, c *cli.Command) error {
+			traktApi, err := trakt.New(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to create trakt client: %w", err)
+			}
+
+			cleanOptions := &trakt.CleanOptions{Watched: watched}
+
+			if err := traktApi.Clean(list, cleanOptions); err != nil {
+				return fmt.Errorf("failed to clean list %s: %w", list, err)
 			}
 
 			return nil

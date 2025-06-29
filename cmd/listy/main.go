@@ -42,6 +42,7 @@ func main() {
 					addIntersectionToListCmd(),
 					addDifferenceToListCmd(),
 					copyListOrderCmd(),
+					cleanCmd(),
 				},
 			},
 		},

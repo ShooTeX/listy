@@ -20,8 +20,6 @@ func New(ctx context.Context) (*Trakt, error) {
 		return nil, err
 	}
 
-	client.SetDebug(true)
-
 	return &Trakt{
 		client: client,
 		ctx:    ctx,
@@ -136,5 +134,38 @@ func (t *Trakt) CopyListOrder(list, destination string) error {
 		return fmt.Errorf("failed to update order of list %s: %w", destination, err)
 	}
 
+	return nil
+}
+
+type CleanOptions struct {
+	Watched bool
+}
+
+func (t *Trakt) Clean(list string, options *CleanOptions) error {
+	fmt.Printf("Cleaning list '%s' with options: %+v\n", list, options)
+	first, err := t.isWatched("movies", "requiem-for-a-dream-2000")
+	if err != nil {
+		return fmt.Errorf("failed to check if item is watched: %w", err)
+	}
+
+	second, err := t.isWatched("movies", "drive-2011")
+	if err != nil {
+		return fmt.Errorf("failed to check if item is watched: %w", err)
+	}
+
+	third, err := t.isWatched("shows", "cowboy-bebop")
+	if err != nil {
+		return fmt.Errorf("failed to check if item is watched: %w", err)
+	}
+
+	fourth, err := t.isWatched("shows", "the-bear")
+	if err != nil {
+		return fmt.Errorf("failed to check if item is watched: %w", err)
+	}
+
+	fmt.Printf("Is 'Requiem for a Dream' watched? %v\n", first)
+	fmt.Printf("Is 'Drive' watched? %v\n", second)
+	fmt.Printf("Is 'Cowboy Bebop' watched? %v\n", third)
+	fmt.Printf("Is 'The Bear' watched? %v\n", fourth)
 	return nil
 }
