@@ -142,30 +142,30 @@ type CleanOptions struct {
 }
 
 func (t *Trakt) Clean(list string, options *CleanOptions) error {
-	fmt.Printf("Cleaning list '%s' with options: %+v\n", list, options)
-	first, err := t.isWatched("movies", "requiem-for-a-dream-2000")
+	listResponse, err := t.getList(list)
 	if err != nil {
-		return fmt.Errorf("failed to check if item is watched: %w", err)
+		return fmt.Errorf("failed to get list %s: %w", list, err)
 	}
 
-	second, err := t.isWatched("movies", "drive-2011")
-	if err != nil {
-		return fmt.Errorf("failed to check if item is watched: %w", err)
+	listItems := listResponse.ListItemsSlice()
+
+	var itemsToRemove []ListItem
+	if options.Watched {
+		for _, item := range listItems {
+			isItemWatched, err := t.isWatched(item.Type, item.EntityId)
+			if err != nil {
+				return fmt.Errorf("failed to check if item %s with ID %d is watched: %w", item.Type, item.EntityId, err)
+			}
+
+			if isItemWatched {
+				itemsToRemove = append(itemsToRemove, item)
+			}
+		}
 	}
 
-	third, err := t.isWatched("shows", "cowboy-bebop")
-	if err != nil {
-		return fmt.Errorf("failed to check if item is watched: %w", err)
+	if err := t.removeFromList(list, itemsToRemove); err != nil {
+		return fmt.Errorf("failed to remove watched items from list %s: %w", list, err)
 	}
 
-	fourth, err := t.isWatched("shows", "the-bear")
-	if err != nil {
-		return fmt.Errorf("failed to check if item is watched: %w", err)
-	}
-
-	fmt.Printf("Is 'Requiem for a Dream' watched? %v\n", first)
-	fmt.Printf("Is 'Drive' watched? %v\n", second)
-	fmt.Printf("Is 'Cowboy Bebop' watched? %v\n", third)
-	fmt.Printf("Is 'The Bear' watched? %v\n", fourth)
 	return nil
 }

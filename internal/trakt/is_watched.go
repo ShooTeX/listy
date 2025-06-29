@@ -44,14 +44,14 @@ type traktHistoryResponse []struct {
 	} `json:"show,omitempty"`
 }
 
-func (t *Trakt) isWatched(itemType string, itemId string) (bool, error) {
-	path := "/sync/history/" + itemType + "/" + itemId
+func (t *Trakt) isWatched(itemType string, itemId int) (bool, error) {
+	path := "/sync/history/" + itemType + "s/" + fmt.Sprint(itemId)
 
 	var response traktHistoryResponse
 	if _, err := t.client.R().
 		SetResult(&response).
 		Get(path); err != nil {
-		return false, fmt.Errorf("failed to check if %s with ID %s is watched: %w", itemType, itemId, err)
+		return false, fmt.Errorf("failed to check if %s with ID %d is watched: %w", itemType, itemId, err)
 	}
 
 	return len(response) > 0, nil
