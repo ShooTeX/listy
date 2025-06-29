@@ -40,13 +40,13 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string) error {
 		fullIntersection = fullIntersection.Intersect(entries.ListItemsSet())
 	}
 
-	intersectionDestinationDifference := fullIntersection.Difference(destinationList.ListItemsSet())
+	intersectionWithoutDestinationItems := fullIntersection.Difference(destinationList.ListItemsSet())
 
-	if intersectionDestinationDifference.IsEmpty() {
+	if intersectionWithoutDestinationItems.IsEmpty() {
 		return nil
 	}
 
-	if err := t.addToList(destination, intersectionDestinationDifference); err != nil {
+	if err := t.addToList(destination, intersectionWithoutDestinationItems.ToSlice()); err != nil {
 		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
 	}
 
@@ -58,17 +58,30 @@ func (t *Trakt) AddDifferenceToList(lists []string, destination string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
 	}
-
-	difference := allLists[0].ListItemsSet().Clone()
-	for _, entries := range allLists[1:] {
-		difference = difference.Difference(entries.ListItemsSet())
+	destinationList, err := t.getList(destination)
+	if err != nil {
+		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
 
-	if difference.IsEmpty() {
+	fullDifference := allLists[0].ListItemsSet().Clone()
+	for _, entries := range allLists[1:] {
+		fullDifference = fullDifference.Difference(entries.ListItemsSet())
+	}
+
+	differenceWithoutDestinationItems := fullDifference.Difference(destinationList.ListItemsSet())
+
+	if differenceWithoutDestinationItems.IsEmpty() {
 		return nil
 	}
 
-	if err := t.addToList(destination, difference); err != nil {
+	var orderedDifference []ListItem
+	for _, item := range allLists[0].ListItemsSlice() {
+		if differenceWithoutDestinationItems.Contains(item) {
+			orderedDifference = append(orderedDifference, item)
+		}
+	}
+
+	if err := t.addToList(destination, orderedDifference); err != nil {
 		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
 	}
 

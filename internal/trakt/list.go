@@ -43,8 +43,8 @@ type ListItem struct {
 	Id   int
 }
 
-func (e *traktListEntries) ListItemsSet() mapset.Set[ListItem] {
-	ids := mapset.NewSet[ListItem]()
+func (e *traktListEntries) ListItemsSlice() []ListItem {
+	items := make([]ListItem, 0, len(*e))
 	for _, entry := range *e {
 		switch entry.Type {
 		case "movie":
@@ -53,16 +53,20 @@ func (e *traktListEntries) ListItemsSet() mapset.Set[ListItem] {
 				Type: entry.Type,
 				Id:   entry.Movie.Ids.Trakt,
 			}
-			ids.Add(item)
+			items = append(items, item)
 		case "show":
 			item := ListItem{
 				Name: entry.Show.Title,
 				Type: entry.Type,
 				Id:   entry.Show.Ids.Trakt,
 			}
-			ids.Add(item)
+			items = append(items, item)
 		}
 	}
 
-	return ids
+	return items
+}
+
+func (e *traktListEntries) ListItemsSet() mapset.Set[ListItem] {
+	return mapset.NewSet(e.ListItemsSlice()...)
 }

@@ -2,8 +2,6 @@ package trakt
 
 import (
 	"fmt"
-
-	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type addListItemsBodyItemIds struct {
@@ -19,10 +17,10 @@ type addListItemsBody struct {
 	Shows  []addListItemsBodyItem `json:"shows,omitempty"`
 }
 
-func (t *Trakt) addToList(listId string, items mapset.Set[ListItem]) error {
+func (t *Trakt) addToList(listId string, items []ListItem) error {
 	path := getListPath(listId)
 	var body addListItemsBody
-	for item := range items.Iter() {
+	for _, item := range items {
 		switch item.Type {
 		case "movie":
 			body.Movies = append(body.Movies,
