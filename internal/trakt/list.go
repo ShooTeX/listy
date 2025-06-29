@@ -38,9 +38,10 @@ type traktListEntries []struct {
 }
 
 type ListItem struct {
-	Name string
-	Type string
-	Id   int
+	Id       int
+	Name     string
+	Type     string
+	EntityId int
 }
 
 func (e *traktListEntries) ListItemsSlice() []ListItem {
@@ -49,16 +50,18 @@ func (e *traktListEntries) ListItemsSlice() []ListItem {
 		switch entry.Type {
 		case "movie":
 			item := ListItem{
-				Name: entry.Movie.Title,
-				Type: entry.Type,
-				Id:   entry.Movie.Ids.Trakt,
+				Id:       entry.Id,
+				Name:     entry.Movie.Title,
+				Type:     entry.Type,
+				EntityId: entry.Movie.Ids.Trakt,
 			}
 			items = append(items, item)
 		case "show":
 			item := ListItem{
-				Name: entry.Show.Title,
-				Type: entry.Type,
-				Id:   entry.Show.Ids.Trakt,
+				Id:       entry.Id,
+				Name:     entry.Show.Title,
+				Type:     entry.Type,
+				EntityId: entry.Show.Ids.Trakt,
 			}
 			items = append(items, item)
 		}

@@ -3,6 +3,7 @@ package trakt
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/shootex/listy/internal/auth"
 	"resty.dev/v3"
@@ -18,6 +19,8 @@ func New(ctx context.Context) (*Trakt, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	client.SetDebug(true)
 
 	return &Trakt{
 		client: client,
@@ -90,6 +93,47 @@ func (t *Trakt) AddDifferenceToList(lists []string, destination string) error {
 
 	if err := t.addToList(destination, orderedDifference); err != nil {
 		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
+	}
+
+	return nil
+}
+
+func (t *Trakt) CopyListOrder(list, destination string) error {
+	fromList, err := t.getList(list)
+	if err != nil {
+		return fmt.Errorf("failed to get list %s: %w", list, err)
+	}
+
+	destinationList, err := t.getList(destination)
+	if err != nil {
+		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
+	}
+
+	orderMap := make(map[int]int)
+	for i, item := range fromList.ListItemsSlice() {
+		orderMap[item.EntityId] = i
+	}
+
+	orderedItems := destinationList.ListItemsSlice()
+
+	slices.SortFunc(orderedItems, func(a, b ListItem) int {
+		aIdx, aOk := orderMap[a.EntityId]
+		bIdx, bOk := orderMap[b.EntityId]
+
+		switch {
+		case aOk && bOk:
+			return aIdx - bIdx
+		case aOk && !bOk:
+			return -1
+		case !aOk && bOk:
+			return 1
+		default:
+			return 0
+		}
+	})
+
+	if err := t.updateListOrder(destination, orderedItems); err != nil {
+		return fmt.Errorf("failed to update order of list %s: %w", destination, err)
 	}
 
 	return nil

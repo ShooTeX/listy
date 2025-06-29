@@ -26,14 +26,14 @@ func (t *Trakt) addToList(listId string, items []ListItem) error {
 			body.Movies = append(body.Movies,
 				addListItemsBodyItem{
 					Ids: addListItemsBodyItemIds{
-						Trakt: int64(item.Id),
+						Trakt: int64(item.EntityId),
 					},
 				})
 		case "show":
 			body.Shows = append(body.Shows,
 				addListItemsBodyItem{
 					Ids: addListItemsBodyItemIds{
-						Trakt: int64(item.Id),
+						Trakt: int64(item.EntityId),
 					},
 				})
 		}
