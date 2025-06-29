@@ -46,7 +46,14 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string) error {
 		return nil
 	}
 
-	if err := t.addToList(destination, intersectionWithoutDestinationItems.ToSlice()); err != nil {
+	var orderedIntersection []ListItem
+	for _, item := range allLists[0].ListItemsSlice() {
+		if intersectionWithoutDestinationItems.Contains(item) {
+			orderedIntersection = append(orderedIntersection, item)
+		}
+	}
+
+	if err := t.addToList(destination, orderedIntersection); err != nil {
 		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
 	}
 
