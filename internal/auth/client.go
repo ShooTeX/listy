@@ -40,7 +40,8 @@ func NewClient(ctx context.Context, onUpdate func(newToken *Token) error) (*rest
 		SetHeader("trakt-api-version", "2").
 		SetHeader("trakt-api-key", clientId).
 		SetHeader("User-Agent", fmt.Sprintf("%s/%s", version.Name, version.Version)).
-		AddRequestMiddleware(c.authMiddleware)
+		AddRequestMiddleware(c.authMiddleware).
+		AddResponseMiddleware(errorResponseMiddleware)
 
 	return c.resty, nil
 }
@@ -61,5 +62,12 @@ func (c *Client) authMiddleware(client *resty.Client, req *resty.Request) error 
 
 	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
 
+	return nil
+}
+
+func errorResponseMiddleware(client *resty.Client, resp *resty.Response) error {
+	if resp.IsError() {
+		return fmt.Errorf("API error: %s", resp.Status())
+	}
 	return nil
 }

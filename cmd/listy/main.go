@@ -14,8 +14,9 @@ import (
 
 func main() {
 	cmd := &cli.Command{
-		Name:  "listy",
-		Usage: "A simple CLI tool to manage Trakt lists",
+		Name:                   "listy",
+		Usage:                  "A simple CLI tool to manage Trakt lists",
+		UseShortOptionHandling: true,
 		Commands: []*cli.Command{
 			{
 				Name:  "auth",
@@ -35,21 +36,10 @@ func main() {
 				},
 			},
 			{
-				Name: "test",
-				Action: func(ctx context.Context, c *cli.Command) error {
-					client, err := auth.NewClient(ctx, nil)
-					if err != nil {
-						return fmt.Errorf("failed to create client: %v", err)
-					}
-					defer client.Close()
-
-					_, err = client.R().
-						Get("/users/me/lists")
-					if err != nil {
-						log.Fatal(err)
-					}
-
-					return nil
+				Name:  "list",
+				Usage: "Manage lists",
+				Commands: []*cli.Command{
+					addIntersectionToListCmd(),
 				},
 			},
 		},

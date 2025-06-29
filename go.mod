@@ -3,10 +3,10 @@ module github.com/shootex/listy
 go 1.24.3
 
 require (
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/urfave/cli/v3 v3.3.8
 	github.com/zalando/go-keyring v0.2.6
-	golang.org/x/oauth2 v0.30.0
 	resty.dev/v3 v3.0.0-beta.3
 )
 
