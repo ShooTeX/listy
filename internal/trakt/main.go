@@ -30,17 +30,45 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
 	}
-
-	intersection := allLists[0].ListItemsSet().Clone()
-	for _, entries := range allLists[1:] {
-		intersection = intersection.Intersect(entries.ListItemsSet())
+	destinationList, err := t.getList(destination)
+	if err != nil {
+		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
 
-	if intersection.IsEmpty() {
+	fullIntersection := allLists[0].ListItemsSet().Clone()
+	for _, entries := range allLists[1:] {
+		fullIntersection = fullIntersection.Intersect(entries.ListItemsSet())
+	}
+
+	intersectionDestinationDifference := fullIntersection.Difference(destinationList.ListItemsSet())
+
+	if intersectionDestinationDifference.IsEmpty() {
 		return nil
 	}
 
-	if err := t.addToList(destination, intersection); err != nil {
+	if err := t.addToList(destination, intersectionDestinationDifference); err != nil {
+		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
+	}
+
+	return nil
+}
+
+func (t *Trakt) AddDifferenceToList(lists []string, destination string) error {
+	allLists, err := t.getLists(lists)
+	if err != nil {
+		return fmt.Errorf("failed to get lists: %w", err)
+	}
+
+	difference := allLists[0].ListItemsSet().Clone()
+	for _, entries := range allLists[1:] {
+		difference = difference.Difference(entries.ListItemsSet())
+	}
+
+	if difference.IsEmpty() {
+		return nil
+	}
+
+	if err := t.addToList(destination, difference); err != nil {
 		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
 	}
 

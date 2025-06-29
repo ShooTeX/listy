@@ -40,6 +40,7 @@ func main() {
 				Usage: "Manage lists",
 				Commands: []*cli.Command{
 					addIntersectionToListCmd(),
+					addDifferenceToListCmd(),
 				},
 			},
 		},
