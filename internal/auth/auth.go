@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	traktDeviceCodeURL = "https://api.trakt.tv/oauth/device/code"
-	traktTokenURL      = "https://api.trakt.tv/oauth/device/token"
+	traktDeviceCodeURL  = "https://api.trakt.tv/oauth/device/code"
+	traktDeviceTokenURL = "https://api.trakt.tv/oauth/device/token"
+	traktTokenURL       = "https://api.trakt.tv/oauth/token"
 )
 
 func getClientCredentials() (clientId, clientSecret string, err error) {
@@ -71,7 +72,7 @@ func StartDeviceAuthFlow(ctx context.Context) (*Token, error) {
 					"code":          deviceResp.DeviceCode,
 				}).
 				SetResult(&tokenResp).
-				Post(traktTokenURL)
+				Post(traktDeviceTokenURL)
 			if err != nil {
 				return nil, fmt.Errorf("error during token exchange: %w", err)
 			}

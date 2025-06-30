@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sync"
 
 	"github.com/shootex/listy/internal/auth"
 	"resty.dev/v3"
@@ -151,16 +152,33 @@ func (t *Trakt) Clean(list string, options *CleanOptions) error {
 
 	var itemsToRemove []ListItem
 	if options.Watched {
-		for _, item := range listItems {
-			isItemWatched, err := t.isWatched(item.Type, item.EntityId)
-			if err != nil {
-				return fmt.Errorf("failed to check if item %s with ID %d is watched: %w", item.Type, item.EntityId, err)
-			}
+		sem := make(chan struct{}, 100)
+		var wg sync.WaitGroup
+		var mu sync.Mutex
 
-			if isItemWatched {
-				itemsToRemove = append(itemsToRemove, item)
-			}
+		for _, item := range listItems {
+			sem <- struct{}{}
+			wg.Add(1)
+
+			go func(item ListItem) {
+				defer wg.Done()
+				defer func() { <-sem }()
+
+				isItemWatched, err := t.isWatched(item.Type, item.EntityId)
+				if err != nil {
+					// NOTE: silent skip, implement error handling maybe
+					return
+				}
+
+				if isItemWatched {
+					mu.Lock()
+					itemsToRemove = append(itemsToRemove, item)
+					mu.Unlock()
+				}
+			}(item)
 		}
+
+		wg.Wait()
 	}
 
 	if err := t.removeFromList(list, itemsToRemove); err != nil {
