@@ -146,7 +146,6 @@ func cleanCmd() *cli.Command {
 			&cli.StringArg{
 				Name:        "list",
 				Destination: &list,
-				Value:       "testing",
 			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
