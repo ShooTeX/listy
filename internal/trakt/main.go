@@ -27,7 +27,7 @@ func New(ctx context.Context) (*Trakt, error) {
 	}, nil
 }
 
-func (t *Trakt) AddIntersectToList(lists []string, destination string) error {
+func (t *Trakt) AddIntersectToList(lists []string, destination string, clean bool) error {
 	allLists, err := t.getLists(lists)
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
@@ -37,21 +37,27 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string) error {
 		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
 
-	fullIntersection := allLists[0].ListItemsSet().Clone()
+	intersection := allLists[0].ListItemsSet().Clone()
 	for _, entries := range allLists[1:] {
-		fullIntersection = fullIntersection.Intersect(entries.ListItemsSet())
+		intersection = intersection.Intersect(entries.ListItemsSet())
 	}
 
-	intersectionWithoutDestinationItems := fullIntersection.Difference(destinationList.ListItemsSet())
+	intersection = intersection.Difference(destinationList.ListItemsSet())
 
-	if intersectionWithoutDestinationItems.IsEmpty() {
+	if intersection.IsEmpty() {
 		return nil
 	}
 
 	var orderedIntersection []ListItem
 	for _, item := range allLists[0].ListItemsSlice() {
-		if intersectionWithoutDestinationItems.Contains(item) {
+		if intersection.Contains(item) {
 			orderedIntersection = append(orderedIntersection, item)
+		}
+	}
+
+	if clean {
+		if err := t.removeFromList(destination, destinationList.ListItemsSlice()); err != nil {
+			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
 	}
 
@@ -62,7 +68,7 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string) error {
 	return nil
 }
 
-func (t *Trakt) AddDifferenceToList(lists []string, destination string) error {
+func (t *Trakt) AddDifferenceToList(lists []string, destination string, clean bool) error {
 	allLists, err := t.getLists(lists)
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
@@ -72,26 +78,32 @@ func (t *Trakt) AddDifferenceToList(lists []string, destination string) error {
 		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
 
-	fullDifference := allLists[0].ListItemsSet().Clone()
+	difference := allLists[0].ListItemsSet().Clone()
 	for _, entries := range allLists[1:] {
-		fullDifference = fullDifference.Difference(entries.ListItemsSet())
+		difference = difference.Difference(entries.ListItemsSet())
 	}
 
-	differenceWithoutDestinationItems := fullDifference.Difference(destinationList.ListItemsSet())
+	difference = difference.Difference(destinationList.ListItemsSet())
 
-	if differenceWithoutDestinationItems.IsEmpty() {
+	if difference.IsEmpty() {
 		return nil
 	}
 
 	var orderedDifference []ListItem
 	for _, item := range allLists[0].ListItemsSlice() {
-		if differenceWithoutDestinationItems.Contains(item) {
+		if difference.Contains(item) {
 			orderedDifference = append(orderedDifference, item)
 		}
 	}
 
+	if clean {
+		if err := t.removeFromList(destination, destinationList.ListItemsSlice()); err != nil {
+			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
+		}
+	}
+
 	if err := t.addToList(destination, orderedDifference); err != nil {
-		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
+		return fmt.Errorf("failed to add difference to list %s: %w", destination, err)
 	}
 
 	return nil

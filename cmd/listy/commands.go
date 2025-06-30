@@ -11,6 +11,7 @@ import (
 func addIntersectionToListCmd() *cli.Command {
 	var lists []string
 	var destination string
+	var clean bool
 	return &cli.Command{
 		Name: "intersection",
 		Flags: []cli.Flag{
@@ -19,6 +20,12 @@ func addIntersectionToListCmd() *cli.Command {
 				Destination: &destination,
 				Required:    true,
 				Aliases:     []string{"to"},
+			},
+			&cli.BoolFlag{
+				Name:        "clean",
+				Usage:       "remove items from the destination list that are not in the intersection",
+				Destination: &clean,
+				Aliases:     []string{"c"},
 			},
 		},
 		Arguments: []cli.Argument{
@@ -35,7 +42,7 @@ func addIntersectionToListCmd() *cli.Command {
 				return fmt.Errorf("failed to create trakt client: %w", err)
 			}
 
-			if err := traktApi.AddIntersectToList(lists, destination); err != nil {
+			if err := traktApi.AddIntersectToList(lists, destination, clean); err != nil {
 				return fmt.Errorf("failed to add intersection to list: %w", err)
 			}
 
@@ -47,6 +54,7 @@ func addIntersectionToListCmd() *cli.Command {
 func addDifferenceToListCmd() *cli.Command {
 	var lists []string
 	var destination string
+	var clean bool
 	return &cli.Command{
 		Name: "difference",
 		Flags: []cli.Flag{
@@ -55,6 +63,12 @@ func addDifferenceToListCmd() *cli.Command {
 				Destination: &destination,
 				Required:    true,
 				Aliases:     []string{"to"},
+			},
+			&cli.BoolFlag{
+				Name:        "clean",
+				Usage:       "remove items from the destination list that are not in the intersection",
+				Destination: &clean,
+				Aliases:     []string{"c"},
 			},
 		},
 		Arguments: []cli.Argument{
@@ -71,7 +85,7 @@ func addDifferenceToListCmd() *cli.Command {
 				return fmt.Errorf("failed to create trakt client: %w", err)
 			}
 
-			if err := traktApi.AddDifferenceToList(lists, destination); err != nil {
+			if err := traktApi.AddDifferenceToList(lists, destination, clean); err != nil {
 				return fmt.Errorf("failed to add intersection to list: %w", err)
 			}
 
