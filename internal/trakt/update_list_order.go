@@ -2,10 +2,6 @@ package trakt
 
 import "fmt"
 
-type updateListOrderBody struct {
-	Rank []int `json:"rank"`
-}
-
 func (t *Trakt) updateListOrder(listId string, items []ListItem) error {
 	path := getListPath(listId) + "/reorder"
 

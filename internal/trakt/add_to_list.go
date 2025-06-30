@@ -4,19 +4,6 @@ import (
 	"fmt"
 )
 
-type addListItemsBodyItemIds struct {
-	Trakt int64 `json:"trakt"`
-}
-
-type addListItemsBodyItem struct {
-	Ids addListItemsBodyItemIds `json:"ids"`
-}
-
-type addListItemsBody struct {
-	Movies []addListItemsBodyItem `json:"movies,omitempty"`
-	Shows  []addListItemsBodyItem `json:"shows,omitempty"`
-}
-
 func (t *Trakt) addToList(listId string, items []ListItem) error {
 	path := getListPath(listId)
 	var body addListItemsBody

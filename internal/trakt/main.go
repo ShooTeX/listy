@@ -49,14 +49,14 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string, clean boo
 	}
 
 	var orderedIntersection []ListItem
-	for _, item := range allLists[0].ListItemsSlice() {
+	for _, item := range allLists[0].toListItems() {
 		if intersection.Contains(item) {
 			orderedIntersection = append(orderedIntersection, item)
 		}
 	}
 
 	if clean {
-		if err := t.removeFromList(destination, destinationList.ListItemsSlice()); err != nil {
+		if err := t.removeFromList(destination, destinationList.toListItems()); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
 	}
@@ -90,14 +90,14 @@ func (t *Trakt) AddDifferenceToList(lists []string, destination string, clean bo
 	}
 
 	var orderedDifference []ListItem
-	for _, item := range allLists[0].ListItemsSlice() {
+	for _, item := range allLists[0].toListItems() {
 		if difference.Contains(item) {
 			orderedDifference = append(orderedDifference, item)
 		}
 	}
 
 	if clean {
-		if err := t.removeFromList(destination, destinationList.ListItemsSlice()); err != nil {
+		if err := t.removeFromList(destination, destinationList.toListItems()); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
 	}
@@ -121,11 +121,11 @@ func (t *Trakt) CopyListOrder(list, destination string) error {
 	}
 
 	orderMap := make(map[int]int)
-	for i, item := range fromList.ListItemsSlice() {
+	for i, item := range fromList.toListItems() {
 		orderMap[item.EntityId] = i
 	}
 
-	orderedItems := destinationList.ListItemsSlice()
+	orderedItems := destinationList.toListItems()
 
 	slices.SortFunc(orderedItems, func(a, b ListItem) int {
 		aIdx, aOk := orderMap[a.EntityId]
@@ -160,7 +160,7 @@ func (t *Trakt) Clean(list string, options *CleanOptions) error {
 		return fmt.Errorf("failed to get list %s: %w", list, err)
 	}
 
-	listItems := listResponse.ListItemsSlice()
+	listItems := listResponse.toListItems()
 
 	var itemsToRemove []ListItem
 	if options.Watched {
