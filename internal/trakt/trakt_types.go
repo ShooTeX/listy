@@ -33,6 +33,8 @@ type traktListEntriesResponse []struct {
 	} `json:"show"`
 }
 
+type traktListEntriesResponses []traktListEntriesResponse
+
 type addListItemsBodyItemIds struct {
 	Trakt int64 `json:"trakt"`
 }

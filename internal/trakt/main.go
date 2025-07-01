@@ -28,11 +28,11 @@ func New(ctx context.Context) (*Trakt, error) {
 }
 
 func (t *Trakt) AddIntersectToList(lists []string, destination string, clean bool) error {
-	allLists, err := t.getLists(lists)
+	allLists, err := t.getListsDeprecated(lists)
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
 	}
-	destinationList, err := t.getList(destination)
+	destinationList, err := t.getListDeprecated(destination)
 	if err != nil {
 		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
@@ -49,14 +49,14 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string, clean boo
 	}
 
 	var orderedIntersection []ListItem
-	for _, item := range allLists[0].toListItems() {
+	for _, item := range allLists[0].ToListItems() {
 		if intersection.Contains(item) {
 			orderedIntersection = append(orderedIntersection, item)
 		}
 	}
 
 	if clean {
-		if err := t.removeFromList(destination, destinationList.toListItems()); err != nil {
+		if err := t.removeFromList(destination, destinationList.ToListItems()); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
 	}
@@ -69,11 +69,11 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string, clean boo
 }
 
 func (t *Trakt) AddDifferenceToList(lists []string, destination string, clean bool) error {
-	allLists, err := t.getLists(lists)
+	allLists, err := t.getListsDeprecated(lists)
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
 	}
-	destinationList, err := t.getList(destination)
+	destinationList, err := t.getListDeprecated(destination)
 	if err != nil {
 		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
@@ -90,14 +90,14 @@ func (t *Trakt) AddDifferenceToList(lists []string, destination string, clean bo
 	}
 
 	var orderedDifference []ListItem
-	for _, item := range allLists[0].toListItems() {
+	for _, item := range allLists[0].ToListItems() {
 		if difference.Contains(item) {
 			orderedDifference = append(orderedDifference, item)
 		}
 	}
 
 	if clean {
-		if err := t.removeFromList(destination, destinationList.toListItems()); err != nil {
+		if err := t.removeFromList(destination, destinationList.ToListItems()); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
 	}
@@ -110,22 +110,22 @@ func (t *Trakt) AddDifferenceToList(lists []string, destination string, clean bo
 }
 
 func (t *Trakt) CopyListOrder(list, destination string) error {
-	fromList, err := t.getList(list)
+	fromList, err := t.getListDeprecated(list)
 	if err != nil {
 		return fmt.Errorf("failed to get list %s: %w", list, err)
 	}
 
-	destinationList, err := t.getList(destination)
+	destinationList, err := t.getListDeprecated(destination)
 	if err != nil {
 		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
 
 	orderMap := make(map[int]int)
-	for i, item := range fromList.toListItems() {
+	for i, item := range fromList.ToListItems() {
 		orderMap[item.EntityId] = i
 	}
 
-	orderedItems := destinationList.toListItems()
+	orderedItems := destinationList.ToListItems()
 
 	slices.SortFunc(orderedItems, func(a, b ListItem) int {
 		aIdx, aOk := orderMap[a.EntityId]
@@ -155,12 +155,12 @@ type CleanOptions struct {
 }
 
 func (t *Trakt) Clean(list string, options *CleanOptions) error {
-	listResponse, err := t.getList(list)
+	listResponse, err := t.getListDeprecated(list)
 	if err != nil {
 		return fmt.Errorf("failed to get list %s: %w", list, err)
 	}
 
-	listItems := listResponse.toListItems()
+	listItems := listResponse.ToListItems()
 
 	var itemsToRemove []ListItem
 	if options.Watched {
