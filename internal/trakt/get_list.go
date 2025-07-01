@@ -1,6 +1,11 @@
 package trakt
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+
+	"golang.org/x/sync/errgroup"
+)
 
 func (t *Trakt) getList(listId string) (ListItems, error) {
 	path := getListPath(listId)
@@ -17,14 +22,25 @@ func (t *Trakt) getList(listId string) (ListItems, error) {
 	return listItems, nil
 }
 
-func (t *Trakt) getLists(lists []string) ([]ListItems, error) {
+func (t *Trakt) getLists(ctx context.Context, lists []string) ([]ListItems, error) {
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.SetLimit(100)
+
 	var allLists []ListItems
 	for _, list := range lists {
-		listItems, err := t.getList(list)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get list %s: %w", list, err)
-		}
-		allLists = append(allLists, listItems)
+		g.Go(func() error {
+			listItems, err := t.getList(list)
+			if err != nil {
+				return fmt.Errorf("failed to get list %s: %w", list, err)
+			}
+			allLists = append(allLists, listItems)
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("failed to get lists: %w", err)
 	}
 
 	return allLists, nil

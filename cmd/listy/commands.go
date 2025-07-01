@@ -85,7 +85,7 @@ func addDifferenceToListCmd() *cli.Command {
 				return fmt.Errorf("failed to create trakt client: %w", err)
 			}
 
-			if err := traktApi.AddDifferenceToList(lists, destination, clean); err != nil {
+			if err := traktApi.AddDifferenceToList(ctx, lists, destination, clean); err != nil {
 				return fmt.Errorf("failed to add intersection to list: %w", err)
 			}
 

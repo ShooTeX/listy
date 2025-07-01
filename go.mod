@@ -8,6 +8,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v3 v3.3.8
 	github.com/zalando/go-keyring v0.2.6
+	golang.org/x/sync v0.15.0
 	resty.dev/v3 v3.0.0-beta.3
 )
 

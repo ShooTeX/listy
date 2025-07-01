@@ -69,8 +69,8 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string, clean boo
 	return nil
 }
 
-func (t *Trakt) AddDifferenceToList(lists []string, destination string, clean bool) error {
-	allLists, err := t.getLists(lists)
+func (t *Trakt) AddDifferenceToList(ctx context.Context, lists []string, destination string, clean bool) error {
+	allLists, err := t.getLists(ctx, lists)
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
 	}
