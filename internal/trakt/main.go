@@ -6,6 +6,7 @@ import (
 	"slices"
 	"sync"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/shootex/listy/internal/auth"
 	"resty.dev/v3"
 )
@@ -69,40 +70,32 @@ func (t *Trakt) AddIntersectToList(lists []string, destination string, clean boo
 }
 
 func (t *Trakt) AddDifferenceToList(lists []string, destination string, clean bool) error {
-	allLists, err := t.getListsDeprecated(lists)
+	allLists, err := t.getLists(lists)
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
 	}
-	destinationList, err := t.getListDeprecated(destination)
+	destinationList, err := t.getList(destination)
 	if err != nil {
 		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
 
-	difference := allLists[0].ListItemsSet().Clone()
-	for _, entries := range allLists[1:] {
-		difference = difference.Difference(entries.ListItemsSet())
-	}
+	unorderedDifference := allLists[0].Difference(allLists[1:]...)
 
-	difference = difference.Difference(destinationList.ListItemsSet())
-
-	if difference.IsEmpty() {
-		return nil
-	}
-
-	var orderedDifference []ListItem
-	for _, item := range allLists[0].ToListItems() {
-		if difference.Contains(item) {
-			orderedDifference = append(orderedDifference, item)
+	var difference ListItems
+	for _, item := range allLists[0] {
+		set := mapset.NewSet(unorderedDifference...)
+		if set.Contains(item) {
+			difference = append(difference, item)
 		}
 	}
 
 	if clean {
-		if err := t.removeFromList(destination, destinationList.ToListItems()); err != nil {
+		if err := t.removeFromList(destination, destinationList); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
 	}
 
-	if err := t.addToList(destination, orderedDifference); err != nil {
+	if err := t.addToList(destination, difference); err != nil {
 		return fmt.Errorf("failed to add difference to list %s: %w", destination, err)
 	}
 

@@ -18,16 +18,14 @@ func (t *Trakt) getList(listId string) (ListItems, error) {
 }
 
 func (t *Trakt) getLists(lists []string) ([]ListItems, error) {
-	var responses traktListEntriesResponses
+	var allLists []ListItems
 	for _, list := range lists {
-		entries, err := t.getListDeprecated(list)
+		listItems, err := t.getList(list)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get list %s: %w", list, err)
 		}
-		responses = append(responses, entries)
+		allLists = append(allLists, listItems)
 	}
-
-	allLists := responses.ToListItems()
 
 	return allLists, nil
 }
