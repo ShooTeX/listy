@@ -42,7 +42,7 @@ func addIntersectionToListCmd() *cli.Command {
 				return fmt.Errorf("failed to create trakt client: %w", err)
 			}
 
-			if err := traktApi.AddIntersectToList(lists, destination, clean); err != nil {
+			if err := traktApi.AddIntersectToList(ctx, lists, destination, clean); err != nil {
 				return fmt.Errorf("failed to add intersection to list: %w", err)
 			}
 

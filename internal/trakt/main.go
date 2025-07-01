@@ -28,41 +28,33 @@ func New(ctx context.Context) (*Trakt, error) {
 	}, nil
 }
 
-func (t *Trakt) AddIntersectToList(lists []string, destination string, clean bool) error {
-	allLists, err := t.getListsDeprecated(lists)
+func (t *Trakt) AddIntersectToList(ctx context.Context, lists []string, destination string, clean bool) error {
+	allLists, err := t.getLists(ctx, lists)
 	if err != nil {
 		return fmt.Errorf("failed to get lists: %w", err)
 	}
-	destinationList, err := t.getListDeprecated(destination)
+	destinationList, err := t.getList(destination)
 	if err != nil {
 		return fmt.Errorf("failed to get destination list %s: %w", destination, err)
 	}
 
-	intersection := allLists[0].ListItemsSet().Clone()
-	for _, entries := range allLists[1:] {
-		intersection = intersection.Intersect(entries.ListItemsSet())
-	}
+	unorderedIntersection := allLists[0].Intersection(allLists[1:]...)
 
-	intersection = intersection.Difference(destinationList.ListItemsSet())
-
-	if intersection.IsEmpty() {
-		return nil
-	}
-
-	var orderedIntersection []ListItem
-	for _, item := range allLists[0].ToListItems() {
-		if intersection.Contains(item) {
-			orderedIntersection = append(orderedIntersection, item)
+	var intersection []ListItem
+	for _, item := range allLists[0] {
+		set := mapset.NewSet(unorderedIntersection...)
+		if set.Contains(item) {
+			intersection = append(intersection, item)
 		}
 	}
 
 	if clean {
-		if err := t.removeFromList(destination, destinationList.ToListItems()); err != nil {
+		if err := t.removeFromList(destination, destinationList); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
 	}
 
-	if err := t.addToList(destination, orderedIntersection); err != nil {
+	if err := t.addToList(destination, intersection); err != nil {
 		return fmt.Errorf("failed to add intersection to list %s: %w", destination, err)
 	}
 
