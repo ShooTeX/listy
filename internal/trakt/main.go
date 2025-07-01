@@ -48,7 +48,7 @@ func (t *Trakt) AddIntersectToList(ctx context.Context, lists []string, destinat
 		}
 	}
 
-	if clean {
+	if clean && len(destinationList) > 0 {
 		if err := t.removeFromList(destination, destinationList); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}
@@ -81,7 +81,7 @@ func (t *Trakt) AddDifferenceToList(ctx context.Context, lists []string, destina
 		}
 	}
 
-	if clean {
+	if clean && len(destinationList) > 0 {
 		if err := t.removeFromList(destination, destinationList); err != nil {
 			return fmt.Errorf("failed to remove unknown items from list %s: %w", destination, err)
 		}

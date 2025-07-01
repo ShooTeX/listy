@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/shootex/listy/internal/version"
 	"resty.dev/v3"
@@ -35,6 +36,9 @@ func NewClient(ctx context.Context, onUpdate func(newToken *Token) error) (*rest
 	}
 
 	c.resty.
+		SetRetryCount(10).
+		SetRetryWaitTime(time.Second).
+		SetRetryDefaultConditions(true).
 		SetBaseURL("https://api.trakt.tv").
 		SetHeader("Content-Type", "application/json").
 		SetHeader("trakt-api-version", "2").

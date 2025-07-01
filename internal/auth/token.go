@@ -63,8 +63,6 @@ func RefreshToken(ctx context.Context, token *Token) (*Token, error) {
 
 	http := resty.New()
 
-	http.SetDebug(true)
-
 	var newToken Token
 	resp, err := http.R().
 		SetHeader("Content-Type", "application/json").
