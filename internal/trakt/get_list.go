@@ -3,6 +3,7 @@ package trakt
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -23,18 +24,22 @@ func (t *Trakt) getList(listId string) (ListItems, error) {
 }
 
 func (t *Trakt) getLists(ctx context.Context, lists []string) ([]ListItems, error) {
-	g, ctx := errgroup.WithContext(ctx)
+	g, _ := errgroup.WithContext(ctx)
 
 	g.SetLimit(100)
 
-	var allLists []ListItems
-	for _, list := range lists {
+	var mu sync.Mutex
+
+	allLists := make([]ListItems, len(lists))
+	for i, list := range lists {
 		g.Go(func() error {
 			listItems, err := t.getList(list)
 			if err != nil {
 				return fmt.Errorf("failed to get list %s: %w", list, err)
 			}
-			allLists = append(allLists, listItems)
+			mu.Lock()
+			allLists[i] = listItems
+			mu.Unlock()
 			return nil
 		})
 	}
