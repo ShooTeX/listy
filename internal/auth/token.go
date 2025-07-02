@@ -3,8 +3,10 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/zalando/go-keyring"
+	"resty.dev/v3"
 )
 
 var tokenKeyringKey = "trakt_oauth_token"
@@ -16,6 +18,10 @@ type Token struct {
 	Scope        string   `json:"scope"`
 	CreatedAt    UnixTime `json:"created_at"`
 	TokenType    string   `json:"token_type"`
+}
+
+func (t *Token) IsExpired() bool {
+	return t.CreatedAt.Time().Add(time.Duration(t.ExpiresIn) * time.Second).Before(time.Now())
 }
 
 func SaveToken(token *Token) error {
@@ -38,6 +44,37 @@ func LoadToken() (*Token, error) {
 	}
 
 	return &token, nil
+}
+
+func RefreshToken(token *Token) (*Token, error) {
+	creds, err := LoadCredentials()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load credentials: %w", err)
+	}
+
+	http := resty.New()
+
+	var newToken Token
+	_, err = http.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(map[string]string{
+			"client_id":     creds.ClientID,
+			"client_secret": creds.ClientSecret,
+			"refresh_token": token.RefreshToken,
+			"grant_type":    "refresh_token",
+			"redirect_uri":  "urn:ietf:wg:oauth:2.0:oob",
+		}).
+		SetResult(&newToken).
+		Post(traktTokenURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to refresh token: %w", err)
+	}
+
+	if err := SaveToken(&newToken); err != nil {
+		return nil, fmt.Errorf("failed to save refreshed token: %w", err)
+	}
+
+	return &newToken, nil
 }
 
 func DeleteToken() error {

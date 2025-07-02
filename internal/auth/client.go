@@ -51,6 +51,15 @@ func NewClient(ctx context.Context, onUpdate func(newToken *Token) error) (*rest
 }
 
 func (c *Client) authMiddleware(client *resty.Client, req *resty.Request) error {
+	if c.token.IsExpired() {
+		token, err := RefreshToken(c.token)
+		if err != nil {
+			return fmt.Errorf("failed to refresh token: %w", err)
+		}
+
+		c.token = token
+	}
+
 	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
 
 	return nil
