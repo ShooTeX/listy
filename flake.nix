@@ -20,7 +20,6 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = [
-            pkgs.cobra-cli
           ];
 
           shellHook = ''
