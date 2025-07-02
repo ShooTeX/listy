@@ -11,22 +11,22 @@ type ListItem struct {
 
 type ListItems []ListItem
 
-type compareableListItem struct {
+type comparableListItem struct {
 	Type     string
 	EntityId int
 }
 
-type compareableListItems []compareableListItem
+type compareableListItems []comparableListItem
 
-func (li ListItem) Identity() compareableListItem {
-	return compareableListItem{
+func (li ListItem) Identity() comparableListItem {
+	return comparableListItem{
 		Type:     li.Type,
 		EntityId: li.EntityId,
 	}
 }
 
-func (l ListItems) Identities() []compareableListItem {
-	ids := make([]compareableListItem, 0, len(l))
+func (l ListItems) Identities() []comparableListItem {
+	ids := make([]comparableListItem, 0, len(l))
 	for _, item := range l {
 		ids = append(ids, item.Identity())
 	}
@@ -44,7 +44,7 @@ func (l ListItems) Difference(otherLists ...ListItems) ListItems {
 		return l.Clone()
 	}
 
-	exclude := make(map[compareableListItem]struct{})
+	exclude := make(map[comparableListItem]struct{})
 	for _, other := range otherLists {
 		for _, item := range other {
 			exclude[item.Identity()] = struct{}{}
@@ -66,9 +66,9 @@ func (l ListItems) Intersection(otherLists ...ListItems) ListItems {
 		return l.Clone()
 	}
 
-	otherMaps := make([]map[compareableListItem]struct{}, len(otherLists))
+	otherMaps := make([]map[comparableListItem]struct{}, len(otherLists))
 	for i, other := range otherLists {
-		m := make(map[compareableListItem]struct{}, len(other))
+		m := make(map[comparableListItem]struct{}, len(other))
 		for _, item := range other {
 			m[item.Identity()] = struct{}{}
 		}
