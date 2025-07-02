@@ -19,7 +19,7 @@ type Client struct {
 
 // NewClient creates a new Trakt client with automatic token management
 func NewClient(ctx context.Context, onUpdate func(newToken *Token) error) (*resty.Client, error) {
-	clientId, _, err := getClientCredentials()
+	creds, err := LoadCredentials()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client credentials: %w", err)
 	}
@@ -42,7 +42,7 @@ func NewClient(ctx context.Context, onUpdate func(newToken *Token) error) (*rest
 		SetBaseURL("https://api.trakt.tv").
 		SetHeader("Content-Type", "application/json").
 		SetHeader("trakt-api-version", "2").
-		SetHeader("trakt-api-key", clientId).
+		SetHeader("trakt-api-key", creds.ClientID).
 		SetHeader("User-Agent", fmt.Sprintf("%s/%s", version.Name, version.Version)).
 		AddRequestMiddleware(c.authMiddleware).
 		AddResponseMiddleware(errorResponseMiddleware)
@@ -51,19 +51,6 @@ func NewClient(ctx context.Context, onUpdate func(newToken *Token) error) (*rest
 }
 
 func (c *Client) authMiddleware(client *resty.Client, req *resty.Request) error {
-	if c.token.IsExpired() {
-		newToken, err := RefreshToken(c.ctx, c.token)
-		if err != nil {
-			return fmt.Errorf("failed to refresh token: %w", err)
-		}
-		c.token = newToken
-		if c.onUpdate != nil {
-			if err := c.onUpdate(newToken); err != nil {
-				return err
-			}
-		}
-	}
-
 	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
 
 	return nil

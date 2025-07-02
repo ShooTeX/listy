@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"resty.dev/v3"
@@ -16,15 +15,6 @@ const (
 	traktTokenURL       = "https://api.trakt.tv/oauth/token"
 )
 
-func getClientCredentials() (clientId, clientSecret string, err error) {
-	clientId = os.Getenv("TRAKT_CLIENT_ID")
-	clientSecret = os.Getenv("TRAKT_CLIENT_SECRET")
-	if clientId == "" || clientSecret == "" {
-		err = errors.New("TRAKT_CLIENT_ID or TRAKT_CLIENT_SECRET environment variables not set")
-	}
-	return
-}
-
 type DeviceCodeResponse struct {
 	DeviceCode      string `json:"device_code"`
 	UserCode        string `json:"user_code"`
@@ -34,7 +24,7 @@ type DeviceCodeResponse struct {
 }
 
 func StartDeviceAuthFlow(ctx context.Context) (*Token, error) {
-	clientId, clientSecret, err := getClientCredentials()
+	creds, err := LoadCredentials()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +33,7 @@ func StartDeviceAuthFlow(ctx context.Context) (*Token, error) {
 
 	resp, err := http.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(map[string]string{"client_id": clientId}).
+		SetBody(map[string]string{"client_id": creds.ClientID}).
 		SetResult(&DeviceCodeResponse{}).
 		Post(traktDeviceCodeURL)
 	if err != nil {
@@ -67,8 +57,8 @@ func StartDeviceAuthFlow(ctx context.Context) (*Token, error) {
 			resp, err := http.R().
 				SetHeader("Content-Type", "application/json").
 				SetBody(map[string]string{
-					"client_id":     clientId,
-					"client_secret": clientSecret,
+					"client_id":     creds.ClientID,
+					"client_secret": creds.ClientSecret,
 					"code":          deviceResp.DeviceCode,
 				}).
 				SetResult(&tokenResp).

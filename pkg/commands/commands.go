@@ -5,4 +5,4 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var Commands = []*cli.Command{list.Cmd, &AuthCmd}
+var Commands = []*cli.Command{list.Cmd, authCmd, configCmd()}
